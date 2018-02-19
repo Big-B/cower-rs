@@ -1,0 +1,11 @@
+[package]
+name = "cower-rs"
+version = "0.1.0"
+authors = ["Brandon Mittman <BrandonMittman@gmail.com>"]
+
+[profile.release]
+panic = 'abort'
+lto = true
+
+[dependencies]
+clap         = "*"
