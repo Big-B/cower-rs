@@ -9,3 +9,4 @@ lto = true
 
 [dependencies]
 clap         = "*"
+time         = "*"

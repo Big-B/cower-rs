@@ -1,13 +1,92 @@
 #[macro_use]
 extern crate clap;
 
+extern crate time;
+
 use clap::{Arg, ArgGroup, App};
 use std::path::{Path,PathBuf};
 use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
+use time::Timespec;
 
+enum SearchBy {
+    Name,
+    NameDesc,
+    Maintainer,
+}
+
+enum Operation {
+    Search,
+    Info,
+    Download,
+    Update
+}
+
+enum LogLevel {
+    Info,
+    Error,
+    Warn,
+    Debug,
+    Verbose
+}
+
+struct AurPkg {
+    name: String,
+    description: String,
+    maintainer: String,
+    pkgbase: String,
+    upstream_url: String,
+    aur_urlpath: String,
+    version: String,
+
+    category_id: i64,
+    package_id: i64,
+    pkgbaseid: i64,
+    votes: i64,
+    popularity: f64,
+    out_of_date: Timespec,
+    submitted_s: Timespec,
+    modified_s: Timespec,
+
+    licenses: Vec<String>,
+    conflicts: Vec<String>,
+    depends: Vec<String>,
+    groups: Vec<String>,
+    makedepends: Vec<String>,
+    optdepends: Vec<String>,
+    checkdepends: Vec<String>,
+    provides: Vec<String>,
+    replaces: Vec<String>,
+    keywords: Vec<String>,
+
+    ignored: i64,
+}
+
+struct Config {
+    aur_domain: String,
+    search_by: SearchBy,
+
+    working_dir: String,
+    delim: String,
+    format: String,
+
+    opmask: Operation,
+    logmask: LogLevel,
+
+    color: i16,
+    ignoreood: i16,
+    sortorder: i16,
+    force: i64,
+    getdeps: i64,
+    literal: i64,
+    quiet: i64,
+    skiprepos: i64,
+    frompkgbuild: i64,
+    maxthreads: i64,
+    timeout: i64
+}
 
 fn main() {
     parse_config_files();
@@ -15,7 +94,7 @@ fn main() {
 }
 
 /// Get the path to the config file.
-/// Will first look for it in the XDG_CONFIG_HOME environment variable
+/// Will first look for it in the `XDG_CONFIG_HOME` environment variable
 /// and then in the caller's home directory
 fn get_config_path()->Option<PathBuf> {
     let mut path_buf = PathBuf::new();
