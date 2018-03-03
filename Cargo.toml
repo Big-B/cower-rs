@@ -11,3 +11,4 @@ lto = true
 clap         = "*"
 time         = "*"
 bitmask      = "*"
+isatty       = "*"

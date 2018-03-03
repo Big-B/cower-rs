@@ -2,8 +2,8 @@
 extern crate clap;
 #[macro_use]
 extern crate bitmask;
-
 extern crate time;
+extern crate isatty;
 
 mod config;
 
