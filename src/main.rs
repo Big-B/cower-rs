@@ -1,36 +1,17 @@
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate bitmask;
 
 extern crate time;
 
+mod config;
+
 use clap::{Arg, ArgGroup, App};
-use std::path::{Path,PathBuf};
-use std::env;
-use std::fs::File;
-use std::io::BufReader;
-use std::io::prelude::*;
 use time::Timespec;
-
-enum SearchBy {
-    Name,
-    NameDesc,
-    Maintainer,
-}
-
-enum Operation {
-    Search,
-    Info,
-    Download,
-    Update
-}
-
-enum LogLevel {
-    Info,
-    Error,
-    Warn,
-    Debug,
-    Verbose
-}
+use std::path::PathBuf;
+use std::env;
+use config::Config;
 
 struct AurPkg {
     name: String,
@@ -64,39 +45,18 @@ struct AurPkg {
     ignored: i64,
 }
 
-struct Config {
-    aur_domain: String,
-    search_by: SearchBy,
-
-    working_dir: String,
-    delim: String,
-    format: String,
-
-    opmask: Operation,
-    logmask: LogLevel,
-
-    color: i16,
-    ignoreood: i16,
-    sortorder: i16,
-    force: i64,
-    getdeps: i64,
-    literal: i64,
-    quiet: i64,
-    skiprepos: i64,
-    frompkgbuild: i64,
-    maxthreads: i64,
-    timeout: i64
-}
-
 fn main() {
-    parse_config_files();
+    let mut config = Config::new();
+    if let Some(path) = get_config_path() {
+        config.parse_config_files(&path);
+    }
     handle_command_line_args();
 }
 
 /// Get the path to the config file.
 /// Will first look for it in the `XDG_CONFIG_HOME` environment variable
 /// and then in the caller's home directory
-fn get_config_path()->Option<PathBuf> {
+pub fn get_config_path()->Option<PathBuf> {
     let mut path_buf = PathBuf::new();
     if let Ok(path) = env::var("XDG_CONFIG_HOME") {
         path_buf.push(path);
@@ -110,18 +70,6 @@ fn get_config_path()->Option<PathBuf> {
         Some(path_buf)
     } else {
         None
-    }
-}
-
-/// Parse the config file
-fn parse_config_files() {
-    if let Some(path_buf) = get_config_path() {
-        if let Ok(file) = File::open(path_buf.as_path()) {
-            let reader = BufReader::new(file);
-            for line in reader.lines() {
-                println!("{}", line.unwrap());
-            }
-        }
     }
 }
 

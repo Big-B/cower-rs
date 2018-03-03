@@ -10,3 +10,4 @@ lto = true
 [dependencies]
 clap         = "*"
 time         = "*"
+bitmask      = "*"
