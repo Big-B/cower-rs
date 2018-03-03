@@ -109,8 +109,8 @@ impl Config {
                 // Get args
                 let line:Vec<&str> = line.split('=').collect();
                 if line.len() == 2 {
-                    let key = line[0];
-                    let val = line[1];
+                    let key = line[0].trim();
+                    let val = line[1].trim();
 
                     // Match against possible configuration options
                     match key {
