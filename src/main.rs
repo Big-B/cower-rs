@@ -47,8 +47,14 @@ struct AurPkg {
 
 fn main() {
     let mut config = Config::new();
+
+    // Check for a config file
     if let Some(path) = get_config_path() {
-        config.parse_config_files(&path);
+        // Parse config file
+        if !config.parse_config_files(&path) {
+            // if bad values, die
+            std::process::exit(-1);
+        }
     }
     handle_command_line_args();
 }
