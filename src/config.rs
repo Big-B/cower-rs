@@ -159,11 +159,27 @@ impl Config {
         let color = color.trim();
         // Handle auto, always, never
         match color {
-            "auto" => self.color = stdout_isatty(),
+            "auto"   => self.color = stdout_isatty(),
             "always" => self.color = true,
-            "never" => self.color = false,
-            _ => {
+            "never"  => self.color = false,
+            _        => {
                 eprintln!("error: invalid option to Color: {}", color);
+                ret = false;
+            },
+        }
+        ret
+    }
+
+    pub fn set_search_by(&mut self, by: &str) -> bool {
+        let mut ret = true;
+        let by = by.trim();
+
+        match by {
+            "maintainer" => self.search_by = SearchBy::Maintainer,
+            "name-desc"  => self.search_by = SearchBy::NameDesc,
+            "name"       => self.search_by = SearchBy::Name,
+            _            => {
+                eprintln!("error: invalid option for 'by': {}", by);
                 ret = false;
             },
         }

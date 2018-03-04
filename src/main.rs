@@ -295,11 +295,15 @@ fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseInt
     }
 
     if let Some(ignore) = matches.values_of("ignore") {
-        config.ignore_pkgs = ignore.map(|s| String::from(s)).collect();
+        config.ignore_pkgs = ignore.map(String::from).collect();
     }
 
     if let Some(ignore) = matches.values_of("ignorerepo") {
-        config.ignore_repos = ignore.map(|s| String::from(s)).collect();
+        config.ignore_repos = ignore.map(String::from).collect();
+    }
+
+    if let Some(by) = matches.value_of("by") {
+        config.set_search_by(by);
     }
 
     if let Some(domain) = matches.value_of("domain") {
