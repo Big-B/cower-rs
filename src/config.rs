@@ -4,14 +4,14 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use isatty::stdout_isatty;
 
-enum SearchBy {
+pub enum SearchBy {
     Name,
     NameDesc,
     Maintainer,
 }
 
 bitmask! {
-    mask OpMask: u32 where flags Operation {
+    pub mask OpMask: u32 where flags Operation {
         Search   = 1,
         Info     = 1 << 1,
         Download = 1 << 2,
@@ -20,7 +20,7 @@ bitmask! {
 }
 
 bitmask! {
-    mask LogMask: u32 where flags LogLevel {
+    pub mask LogMask: u32 where flags LogLevel {
         Info    = 1,
         Error   = 1 << 1,
         Warn    = 1 << 2,
@@ -29,35 +29,35 @@ bitmask! {
     }
 }
 
-enum SortOrder {
+pub enum SortOrder {
     Forward,
     Reverse
 }
 
 pub struct Config {
-    aur_domain: String,
-    search_by: SearchBy,
+    pub aur_domain: String,
+    pub search_by: SearchBy,
 
-    working_dir: PathBuf,
-    delim: String,
-    format: String,
+    pub working_dir: PathBuf,
+    pub delim: String,
+    pub format: String,
 
-    opmask: OpMask,
-    logmask: LogMask,
+    pub opmask: OpMask,
+    pub logmask: LogMask,
 
-    color: bool,
-    sortorder: SortOrder,
-    force: bool,
-    getdeps: bool,
-    literal: bool,
-    quiet: bool,
-    skiprepos: bool,
-    frompkgbuild: bool,
-    maxthreads: u64,
-    timeout: u64,
+    pub color: bool,
+    pub sortorder: SortOrder,
+    pub force: bool,
+    pub getdeps: bool,
+    pub literal: bool,
+    pub quiet: bool,
+    pub skiprepos: bool,
+    pub frompkgbuild: bool,
+    pub maxthreads: u64,
+    pub timeout: u64,
 
-    ignore_pkgs: Vec<String>,
-    ignore_repos: Vec<String>
+    pub ignore_pkgs: Vec<String>,
+    pub ignore_repos: Vec<String>
 }
 
 impl Config {
@@ -142,21 +142,30 @@ impl Config {
                             }
                         }
                         "Color" => {
-                            // Handle auto, always, never
-                            match val {
-                                "auto" => self.color = stdout_isatty(),
-                                "always" => self.color = true,
-                                "never" => self.color = false,
-                                _ => {
-                                    eprintln!("error: invalid option to Color: {}", val);
-                                    ret = false;
-                                },
+                            if !self.set_color(val) {
+                                ret = false;
                             }
                         }
                         _ => eprintln!("ignoring unkkown option: {}", key),
                     }
                 }
             }
+        }
+        ret
+    }
+
+    pub fn set_color(&mut self, color: &str) -> bool {
+        let mut ret = true;
+        let color = color.trim();
+        // Handle auto, always, never
+        match color {
+            "auto" => self.color = stdout_isatty(),
+            "always" => self.color = true,
+            "never" => self.color = false,
+            _ => {
+                eprintln!("error: invalid option to Color: {}", color);
+                ret = false;
+            },
         }
         ret
     }

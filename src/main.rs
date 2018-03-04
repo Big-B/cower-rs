@@ -11,7 +11,8 @@ use clap::{Arg, ArgGroup, App};
 use time::Timespec;
 use std::path::PathBuf;
 use std::env;
-use config::Config;
+use config::{Config, Operation, LogLevel, SearchBy, SortOrder};
+use std::error::Error;
 
 struct AurPkg {
     name: String,
@@ -56,13 +57,19 @@ fn main() {
             std::process::exit(-1);
         }
     }
-    handle_command_line_args();
+
+    // Handle command line arguments
+    if let Err(e) = handle_command_line_args(&mut config) {
+        //eprintln!(format!("Error handling command line args: {}", e.description()));
+        eprintln!("Error handling command line args: {}", e.description());
+        std::process::exit(-1);
+    }
 }
 
 /// Get the path to the config file.
 /// Will first look for it in the `XDG_CONFIG_HOME` environment variable
 /// and then in the caller's home directory
-pub fn get_config_path()->Option<PathBuf> {
+pub fn get_config_path() -> Option<PathBuf> {
     let mut path_buf = PathBuf::new();
     if let Ok(path) = env::var("XDG_CONFIG_HOME") {
         path_buf.push(path);
@@ -80,14 +87,15 @@ pub fn get_config_path()->Option<PathBuf> {
 }
 
 /// Handle the command line arguments
-fn handle_command_line_args() {
-    let _matches = App::new("cower")
+fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseIntError> {
+    let matches = App::new("cower")
         .version(crate_version!())
         .author(crate_authors!("\n"))
         .about(crate_description!())
         .arg(Arg::with_name("download")
              .short("d")
              .long("download")
+             .multiple(true)
              .help("download target(s) -- pass twice to download AUR dependencies")
             )
         .arg(Arg::with_name("info")
@@ -191,6 +199,9 @@ fn handle_command_line_args() {
              .takes_value(true)
              .value_name("key")
              .help("sort results in ascending order by key")
+             .possible_values(&["name", "version", "maintainer", "votes",
+                              "popularity", "outofdate", "lastmodified",
+                              "firstsubmitted"])
             )
         .arg(Arg::with_name("rsort")
              .long("rsort")
@@ -219,4 +230,97 @@ fn handle_command_line_args() {
              .help("output more")
             )
         .get_matches();
+
+    // Operations
+    if matches.is_present("search") {
+        config.opmask.set(Operation::Search);
+    }
+
+    if matches.is_present("update") {
+        config.opmask.set(Operation::Update);
+    }
+
+    if matches.is_present("info") {
+        config.opmask.set(Operation::Info);
+    }
+
+    // Can be passed more than once
+    if matches.is_present("download") {
+        config.opmask.set(Operation::Download);
+        if matches.occurrences_of("download") > 1 {
+            config.getdeps = true;
+        }
+    }
+
+    if matches.is_present("msearch") {
+        config.opmask.set(Operation::Search);
+        config.search_by = SearchBy::Maintainer;
+    }
+
+    // Options
+    if let Some(color) = matches.value_of("color") {
+        config.set_color(color);
+    }
+
+    if matches.is_present("force") {
+        config.force = true;
+    }
+
+    if matches.is_present("quiet") {
+        config.quiet = true;
+    }
+
+    if let Some(path) = matches.value_of("target") {
+        config.working_dir = PathBuf::from(path);
+    }
+
+    if matches.is_present("verbose") {
+        config.logmask.set(LogLevel::Verbose);
+    }
+
+    if matches.is_present("debug") {
+        config.logmask.set(LogLevel::Debug);
+    }
+
+    if let Some(format) = matches.value_of("format") {
+        config.format = String::from(format);
+    }
+
+    if matches.is_present("rsort") {
+        config.sortorder = SortOrder::Reverse;
+    }
+
+    if matches.is_present("sort") {
+        unimplemented!();
+    }
+
+    if let Some(ignore) = matches.values_of("ignore") {
+        config.ignore_pkgs = ignore.map(|s| String::from(s)).collect();
+    }
+
+    if let Some(ignore) = matches.values_of("ignorerepo") {
+        config.ignore_repos = ignore.map(|s| String::from(s)).collect();
+    }
+
+    if let Some(domain) = matches.value_of("domain") {
+        config.aur_domain = String::from(domain);
+    }
+
+    if let Some(delim) = matches.value_of("listdelim") {
+        config.delim = String::from(delim);
+    }
+
+    if matches.is_present("literal") {
+        config.literal = true;
+    }
+
+    if let Some(threads) = matches.value_of("threads") {
+        config.maxthreads = threads.parse()?
+    }
+
+    if let Some(timeout) = matches.value_of("timeout") {
+        config.timeout = timeout.parse()?
+    }
+
+    Ok(())
 }
