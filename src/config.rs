@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use isatty::stdout_isatty;
+use log::Level;
 
 pub enum SearchBy {
     Name,
@@ -16,16 +17,6 @@ bitmask! {
         Info     = 1 << 1,
         Download = 1 << 2,
         Update   = 1 << 3
-    }
-}
-
-bitmask! {
-    pub mask LogMask: u32 where flags LogLevel {
-        Info    = 1,
-        Error   = 1 << 1,
-        Warn    = 1 << 2,
-        Debug   = 1 << 3,
-        Verbose = 1 << 4
     }
 }
 
@@ -43,7 +34,7 @@ pub struct Config {
     pub format: String,
 
     pub opmask: OpMask,
-    pub logmask: LogMask,
+    pub loglevel: Level,
 
     pub color: bool,
     pub sortorder: SortOrder,
@@ -71,7 +62,7 @@ impl Config {
             format: String::new(),
 
             opmask: OpMask::none(),
-            logmask: LogLevel::Error|LogLevel::Warn|LogLevel::Info,
+            loglevel: Level::Info,
 
             color: false,
             sortorder: SortOrder::Forward,

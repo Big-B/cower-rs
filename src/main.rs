@@ -4,15 +4,22 @@ extern crate clap;
 extern crate bitmask;
 extern crate time;
 extern crate isatty;
+extern crate stderrlog;
+extern crate log;
+extern crate ferris_says;
 
 mod config;
 
 use clap::{Arg, ArgGroup, App};
 use time::Timespec;
 use std::path::PathBuf;
-use std::env;
-use config::{Config, Operation, LogLevel, SearchBy, SortOrder};
+use std::{env, str};
+use config::{Config, Operation, SearchBy, SortOrder};
 use std::error::Error;
+use log::Level;
+use std::io::BufWriter;
+use std::string::FromUtf8Error;
+use ferris_says::say;
 
 struct AurPkg {
     name: String,
@@ -86,10 +93,40 @@ pub fn get_config_path() -> Option<PathBuf> {
     }
 }
 
+fn get_version_string() -> Result<String, FromUtf8Error> {
+    // Make cower cow
+    let mut version = String::new();
+    version.push_str("\n  ");
+    version.push_str(crate_version!());
+    version.push_str("\n");
+    version.push_str("     \\\n");
+    version.push_str("      \\\n");
+    version.push_str("        ,__, |    |\n");
+    version.push_str("        (oo)\\|    |___\n");
+    version.push_str("        (__)\\|    |   )\\_\n");
+    version.push_str("          U  |    |_w |  \\\n");
+    version.push_str("             |    |  ||   *\n");
+    version.push_str("\n");
+    version.push_str("             Cower....\n\n");
+
+    // Get max line size
+    let len = version.split('\n').map(|s| s.len()).max().unwrap_or(30);
+
+    // Make a buf writer for ferris_says
+    let mut buf = BufWriter::new(Vec::new());
+    say(&version.into_bytes(), len, &mut buf).unwrap();
+
+    // Prefix output with a newline to fix clap not using one
+    let mut fin = String::new();
+    fin.push_str("\n");
+    fin.push_str(String::from_utf8(buf.into_inner().unwrap())?.as_str());
+    Ok(fin)
+}
+
 /// Handle the command line arguments
 fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseIntError> {
     let matches = App::new("cower")
-        .version(crate_version!())
+        .version(get_version_string().unwrap().as_str())
         .author(crate_authors!("\n"))
         .about(crate_description!())
         .arg(Arg::with_name("download")
@@ -274,12 +311,12 @@ fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseInt
         config.working_dir = PathBuf::from(path);
     }
 
-    if matches.is_present("verbose") {
-        config.logmask.set(LogLevel::Verbose);
+    if matches.is_present("debug") {
+        config.loglevel = Level::Debug;
     }
 
-    if matches.is_present("debug") {
-        config.logmask.set(LogLevel::Debug);
+    if matches.is_present("verbose") {
+        config.loglevel = Level::Trace;
     }
 
     if let Some(format) = matches.value_of("format") {
