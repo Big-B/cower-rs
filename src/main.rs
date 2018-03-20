@@ -107,7 +107,7 @@ fn get_version_string() -> Result<String, FromUtf8Error> {
     version.push_str("          U  |    |_w |  \\\n");
     version.push_str("             |    |  ||   *\n");
     version.push_str("\n");
-    version.push_str("             Cower....\n\n");
+    version.push_str("             Cower-rs.\n\n");
 
     // Get max line size
     let len = version.split('\n').map(|s| s.len()).max().unwrap_or(30);
@@ -125,7 +125,7 @@ fn get_version_string() -> Result<String, FromUtf8Error> {
 
 /// Handle the command line arguments
 fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseIntError> {
-    let matches = App::new("cower")
+    let matches = App::new("cower-rs")
         .version(get_version_string().unwrap().as_str())
         .author(crate_authors!("\n"))
         .about(crate_description!())
