@@ -1,57 +1,20 @@
 #[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate bitmask;
-extern crate time;
-extern crate isatty;
 extern crate stderrlog;
-extern crate log;
 extern crate ferris_says;
+extern crate log;
 
-mod config;
+extern crate cower_rs;
 
 use clap::{Arg, ArgGroup, App};
-use time::Timespec;
 use std::path::PathBuf;
 use std::{env, str};
-use config::{Config, Operation, SearchBy, SortOrder};
+use cower_rs::config::{Config, Operation, SearchBy, SortOrder};
 use std::error::Error;
 use log::Level;
 use std::io::BufWriter;
 use std::string::FromUtf8Error;
 use ferris_says::say;
-
-struct AurPkg {
-    name: String,
-    description: String,
-    maintainer: String,
-    pkgbase: String,
-    upstream_url: String,
-    aur_urlpath: String,
-    version: String,
-
-    category_id: i64,
-    package_id: i64,
-    pkgbaseid: i64,
-    votes: i64,
-    popularity: f64,
-    out_of_date: Timespec,
-    submitted_s: Timespec,
-    modified_s: Timespec,
-
-    licenses: Vec<String>,
-    conflicts: Vec<String>,
-    depends: Vec<String>,
-    groups: Vec<String>,
-    makedepends: Vec<String>,
-    optdepends: Vec<String>,
-    checkdepends: Vec<String>,
-    provides: Vec<String>,
-    replaces: Vec<String>,
-    keywords: Vec<String>,
-
-    ignored: i64,
-}
 
 fn main() {
     let mut config = Config::new();
