@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate stderrlog;
 extern crate log;
+extern crate failure;
 
 extern crate cower_rs;
 
@@ -10,27 +11,23 @@ use std::path::PathBuf;
 use std::{env, str};
 use cower_rs::*;
 use cower_rs::config::*;
-use std::error::Error;
 use log::Level;
+use failure::Error;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let mut config = Config::new();
 
     // Check for a config file
     if let Some(path) = get_config_path() {
         // Parse config file
-        if !config.parse_config_files(&path) {
-            // if bad values, die
-            std::process::exit(-1);
-        }
+        config.parse_config_files(&path)?;
     }
 
     // Handle command line arguments
-    if let Err(e) = handle_command_line_args(&mut config) {
-        //eprintln!(format!("Error handling command line args: {}", e.description()));
-        eprintln!("Error handling command line args: {}", e.description());
-        std::process::exit(-1);
-    }
+    handle_command_line_args(&mut config)?;
+
+    // Everything worked out
+    Ok(())
 }
 
 /// Get the path to the config file.
@@ -54,7 +51,7 @@ pub fn get_config_path() -> Option<PathBuf> {
 }
 
 /// Handle the command line arguments
-fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseIntError> {
+fn handle_command_line_args(config: &mut Config) -> Result<(), Error> {
     let matches = App::new("cower-rs")
         .version(get_version_string().unwrap().as_str())
         .author(crate_authors!("\n"))
@@ -226,7 +223,7 @@ fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseInt
 
     // Options
     if let Some(color) = matches.value_of("color") {
-        config.set_color(color);
+        config.set_color(color)?;
     }
 
     if matches.is_present("force") {
@@ -270,7 +267,7 @@ fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseInt
     }
 
     if let Some(by) = matches.value_of("by") {
-        config.set_search_by(by);
+        config.set_search_by(by)?;
     }
 
     if let Some(domain) = matches.value_of("domain") {

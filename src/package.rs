@@ -1,5 +1,6 @@
 use time::Timespec;
 
+#[derive(Serialize, Deserialize, Debug)]
 struct AurPkg {
     name: String,
     description: String,
@@ -31,3 +32,5 @@ struct AurPkg {
 
     ignored: i64,
 }
+
+pub fn aur_packages_from_json(json: String) ->

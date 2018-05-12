@@ -4,11 +4,40 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use isatty::stdout_isatty;
 use log::Level;
+use failure::Error;
 
 pub enum SearchBy {
     Name,
     NameDesc,
     Maintainer,
+}
+
+#[derive(Debug, Fail)]
+pub enum ConfigError {
+    #[fail(display = "TargetDir path not absolue: {}", path)]
+    TargetDirNotAbsolute {
+        path: String,
+    },
+    #[fail(display = "TargetDir not valid directory: {}", path)]
+    TargetDirNotDir {
+        path: String,
+    },
+    #[fail(display = "Invalid MaxThreads Argument: {}", val)]
+    InvalidMaxThreadArg {
+        val: String,
+    },
+    #[fail(display = "Invalid ConnectTimeout Argument: {}", val)]
+    InvalidConnectTimeoutArg {
+        val: String,
+    },
+    #[fail(display = "Invalid Color Argument: {}", val)]
+    InvalidColorArg {
+        val: String,
+    },
+    #[fail(display = "Invalid option for 'by': {}", val)]
+    InvalidSearchByArg {
+        val: String,
+    },
 }
 
 bitflags! {
@@ -82,8 +111,7 @@ impl Config {
     }
 
     /// Parse the config file
-    pub fn parse_config_files(&mut self, path_buf: &PathBuf) -> bool {
-        let mut ret = true;
+    pub fn parse_config_files(&mut self, path_buf: &PathBuf) -> Result<(), ConfigError> {
         if let Ok(file) = File::open(path_buf.as_path()) {
             let reader = BufReader::new(file);
             for line in reader.lines() {
@@ -112,42 +140,39 @@ impl Config {
                             // Must be an absolute path to a directory
                             self.working_dir.push(val);
                             if !self.working_dir.is_dir() {
-                                eprintln!("error: TargetDir cannot be a relative path");
-                                ret = false;
+                                return Err(ConfigError::TargetDirNotDir { path: val.to_string() });
                             } else if !self.working_dir.is_absolute() {
-                                eprintln!("error: failed to resolve option to TargetDir");
-                                ret = false;
+                                return Err(ConfigError::TargetDirNotAbsolute { path: val.to_string() });
                             }
                         },
                         "MaxThreads" => match val.parse() {
                             Ok(val) => self.maxthreads = val,
                             Err(_) => {
-                                eprintln!("error: invalid option to MaxThreads: {}", val);
-                                ret = false;
+                                return Err(ConfigError::InvalidMaxThreadArg {
+                                    val: val.to_string()
+                                });
                             }
                         }
                         "ConnectTimeout" => match val.parse() {
                             Ok(val) => self.timeout = val,
                             Err(_) => {
-                                eprintln!("error: invalid option to ConnectTimeout: {}", val);
-                                ret = false;
+                                return Err(ConfigError::InvalidConnectTimeoutArg {
+                                    val: val.to_string()
+                                });
                             }
                         }
                         "Color" => {
-                            if !self.set_color(val) {
-                                ret = false;
-                            }
+                            self.set_color(val)?;
                         }
                         _ => eprintln!("ignoring unkkown option: {}", key),
                     }
                 }
             }
         }
-        ret
+        Ok(())
     }
 
-    pub fn set_color(&mut self, color: &str) -> bool {
-        let mut ret = true;
+    pub fn set_color(&mut self, color: &str) -> Result<(), ConfigError> {
         let color = color.trim();
         // Handle auto, always, never
         match color {
@@ -155,15 +180,13 @@ impl Config {
             "always" => self.color = true,
             "never"  => self.color = false,
             _        => {
-                eprintln!("error: invalid option to Color: {}", color);
-                ret = false;
+                return Err(ConfigError::InvalidColorArg { val: color.to_string() });
             },
         }
-        ret
+        Ok(())
     }
 
-    pub fn set_search_by(&mut self, by: &str) -> bool {
-        let mut ret = true;
+    pub fn set_search_by(&mut self, by: &str) -> Result<(), ConfigError> {
         let by = by.trim();
 
         match by {
@@ -171,11 +194,10 @@ impl Config {
             "name-desc"  => self.search_by = SearchBy::NameDesc,
             "name"       => self.search_by = SearchBy::Name,
             _            => {
-                eprintln!("error: invalid option for 'by': {}", by);
-                ret = false;
+                return Err(ConfigError::InvalidSearchByArg { val: by.to_string() });
             },
         }
-        ret
+        Ok(())
     }
 }
 
