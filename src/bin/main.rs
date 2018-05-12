@@ -9,7 +9,7 @@ extern crate cower_rs;
 use clap::{Arg, ArgGroup, App};
 use std::path::PathBuf;
 use std::{env, str};
-use cower_rs::config::{Config, Operation, SearchBy, SortOrder};
+use cower_rs::config::{Config, OpMask, SearchBy, SortOrder};
 use std::error::Error;
 use log::Level;
 use std::io::BufWriter;
@@ -233,27 +233,27 @@ fn handle_command_line_args(config: &mut Config) -> Result<(),std::num::ParseInt
 
     // Operations
     if matches.is_present("search") {
-        config.opmask.set(Operation::Search);
+        config.opmask.insert(OpMask::SEARCH);
     }
 
     if matches.is_present("update") {
-        config.opmask.set(Operation::Update);
+        config.opmask.insert(OpMask::UPDATE);
     }
 
     if matches.is_present("info") {
-        config.opmask.set(Operation::Info);
+        config.opmask.insert(OpMask::INFO);
     }
 
     // Can be passed more than once
     if matches.is_present("download") {
-        config.opmask.set(Operation::Download);
+        config.opmask.insert(OpMask::DOWNLOAD);
         if matches.occurrences_of("download") > 1 {
             config.getdeps = true;
         }
     }
 
     if matches.is_present("msearch") {
-        config.opmask.set(Operation::Search);
+        config.opmask.insert(OpMask::SEARCH);
         config.search_by = SearchBy::Maintainer;
     }
 

@@ -11,12 +11,13 @@ pub enum SearchBy {
     Maintainer,
 }
 
-bitmask! {
-    pub mask OpMask: u32 where flags Operation {
-        Search   = 1,
-        Info     = 1 << 1,
-        Download = 1 << 2,
-        Update   = 1 << 3
+bitflags! {
+    #[derive(Default)]
+    pub struct OpMask: u32 {
+        const SEARCH   = 1;
+        const INFO     = 1 << 1;
+        const DOWNLOAD = 1 << 2;
+        const UPDATE   = 1 << 3;
     }
 }
 
@@ -61,7 +62,7 @@ impl Config {
             delim: String::from("  "),
             format: String::new(),
 
-            opmask: OpMask::none(),
+            opmask: OpMask::default(),
             loglevel: Level::Info,
 
             color: false,
@@ -178,3 +179,8 @@ impl Config {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}

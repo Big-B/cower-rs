@@ -10,7 +10,7 @@ lto = true
 [dependencies]
 clap         = "*"
 time         = "*"
-bitmask      = "*"
+bitflags     = "*"
 isatty       = "*"
 stderrlog    = "*"
 log          = "*"
