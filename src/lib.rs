@@ -3,11 +3,13 @@ extern crate isatty;
 extern crate log;
 extern crate time;
 extern crate ferris_says;
+extern crate serde;
 extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate failure;
 
 pub mod config;
+pub mod package;
 
 use std::io::BufWriter;
 use std::string::FromUtf8Error;
