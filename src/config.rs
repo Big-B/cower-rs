@@ -4,7 +4,6 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use isatty::stdout_isatty;
 use log::Level;
-use failure::Error;
 
 pub enum SearchBy {
     Name,

@@ -1,4 +1,3 @@
-use time::Timespec;
 use failure::Error;
 use serde_json;
 
@@ -28,6 +27,8 @@ pub struct AurPkg {
     #[serde(rename = "Version")]
     version: String,
 
+    #[serde(rename = "CategoryID", default)]
+    category_id: u64,
     #[serde(rename = "ID")]
     package_id: i64,
     #[serde(rename = "PackageBaseID")]
@@ -43,13 +44,25 @@ pub struct AurPkg {
     #[serde(rename = "LastModified")]
     modified_s: u64,
 
-    #[serde(rename = "License")]
+    #[serde(rename = "License", default)]
     licenses: Vec<String>,
-    #[serde(rename = "Depends")]
+    #[serde(rename = "Conflicts", default)]
+    conflicts: Vec<String>,
+    #[serde(rename = "Depends", default)]
     depends: Vec<String>,
-    #[serde(rename = "MakeDepends")]
+    #[serde(rename = "Groups", default)]
+    groups: Vec<String>,
+    #[serde(rename = "MakeDepends", default)]
     makedepends: Vec<String>,
-    #[serde(rename = "Keywords")]
+    #[serde(rename = "OptDepends", default)]
+    optdepends: Vec<String>,
+    #[serde(rename = "CheckDepends", default)]
+    checkdepends: Vec<String>,
+    #[serde(rename = "Provides", default)]
+    provides: Vec<String>,
+    #[serde(rename = "Replaces", default)]
+    replaces: Vec<String>,
+    #[serde(rename = "Keywords", default)]
     keywords: Vec<String>,
 }
 
@@ -95,8 +108,40 @@ fn test_parsing_json() {
         }]
     }"#;
 
-println!("{:?}", aur_packages_from_json(data));
-assert!(aur_packages_from_json(data).is_ok());
+    let input = aur_packages_from_json(data);
+    assert!(input.is_ok());
+
+    let input = input.unwrap();
+    assert_eq!(input.len(), 1);
+
+    let input = &input[0];
+    assert_eq!(input.package_id, 229417);
+    assert_eq!(input.name, "cower");
+    assert_eq!(input.pkgbaseid, 44921);
+    assert_eq!(input.version, "14-2");
+    assert_eq!(input.description, "A simple AUR agent with a pretentious name");
+    assert_eq!(input.upstream_url, "http://github.com/falconindy/cower");
+    assert_eq!(input.votes, 590);
+    assert_eq!(input.popularity, 24.595536);
+    assert!(input.out_of_date.is_none());
+    assert_eq!(input.maintainer, "falconindy");
+    assert_eq!(input.submitted_s, 1293676237);
+    assert_eq!(input.modified_s, 1441804093);
+    assert_eq!(input.aur_urlpath, "/cgit/aur.git/snapshot/cower.tar.gz");
+
+    assert_eq!(input.depends.len(), 4);
+    assert_eq!(input.depends[0], "curl");
+    assert_eq!(input.depends[1], "openssl");
+    assert_eq!(input.depends[2], "pacman");
+    assert_eq!(input.depends[3], "yajl");
+
+    assert_eq!(input.makedepends.len(), 1);
+    assert_eq!(input.makedepends[0], "perl");
+
+    assert_eq!(input.licenses.len(), 1);
+    assert_eq!(input.licenses[0], "MIT");
+
+    assert_eq!(input.keywords.len(), 0);
 }
 
 #[test]
@@ -171,6 +216,5 @@ fn test_parsing_search() {
         }]
     }"#;
 
-    println!("{:?}", aur_packages_from_json(data));
-    //assert!(aur_packages_from_json(data).is_ok());
+    assert!(aur_packages_from_json(data).is_ok());
 }

@@ -14,7 +14,6 @@ pub mod package;
 use std::io::BufWriter;
 use std::string::FromUtf8Error;
 use ferris_says::say;
-use failure::Error;
 
 pub fn get_version_string() -> Result<String, FromUtf8Error> {
     // Make cower cow
