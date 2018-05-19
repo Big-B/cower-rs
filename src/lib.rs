@@ -7,9 +7,11 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate failure;
+extern crate url;
 
 pub mod config;
 pub mod package;
+pub mod aur;
 
 use std::io::BufWriter;
 use std::string::FromUtf8Error;
