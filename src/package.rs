@@ -216,5 +216,9 @@ fn test_parsing_search() {
         }]
     }"#;
 
-    assert!(aur_packages_from_json(data).is_ok());
+    let input = aur_packages_from_json(data);
+    assert!(input.is_ok());
+
+    let input = input.unwrap();
+    assert_eq!(input.len(), 4);
 }
