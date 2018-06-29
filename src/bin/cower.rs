@@ -294,7 +294,6 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
     }
 
     if let Some(sort) = matches.value_of("sort") {
-        let sort = sort.trim();
         config.sort_func = match sort {
             "name" => sort_name,
             "version" => unimplemented!(),
