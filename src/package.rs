@@ -1,5 +1,6 @@
 use failure::Error;
 use serde_json;
+use std::cmp::Ordering;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Query {
@@ -71,6 +72,36 @@ pub fn aur_packages_from_json(json: &str) -> Result<Vec<AurPkg>, Error> {
     Ok(p.results)
 }
 
+pub fn sort_name(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.name.cmp(&pkg2.name)
+}
+
+pub fn sort_cmpmaint(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.maintainer.cmp(&pkg2.maintainer)
+}
+
+pub fn sort_cmpvotes(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.votes.cmp(&pkg2.votes)
+}
+
+pub fn sort_cmppopularity(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.popularity
+        .partial_cmp(&pkg2.popularity)
+        .unwrap_or(Ordering::Less)
+}
+
+pub fn sort_cmpood(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.out_of_date.cmp(&pkg2.out_of_date)
+}
+
+pub fn sort_cmplastmod(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.modified_s.cmp(&pkg2.modified_s)
+}
+
+pub fn sort_cmpfirstsub(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    pkg1.submitted_s.cmp(&pkg2.submitted_s)
+}
+
 #[test]
 fn test_parsing_json() {
     let data = r#"{
@@ -119,7 +150,10 @@ fn test_parsing_json() {
     assert_eq!(input.name, "cower");
     assert_eq!(input.pkgbaseid, 44921);
     assert_eq!(input.version, "14-2");
-    assert_eq!(input.description, "A simple AUR agent with a pretentious name");
+    assert_eq!(
+        input.description,
+        "A simple AUR agent with a pretentious name"
+    );
     assert_eq!(input.upstream_url, "http://github.com/falconindy/cower");
     assert_eq!(input.votes, 590);
     assert_eq!(input.popularity, 24.595536);

@@ -1,21 +1,23 @@
 #[macro_use]
 extern crate clap;
-extern crate stderrlog;
-extern crate log;
 extern crate failure;
+extern crate log;
+extern crate stderrlog;
 
 extern crate cower_rs;
 
-use clap::{Arg, ArgGroup, App};
+use clap::{App, Arg, ArgGroup};
+use cower_rs::aur::*;
+use cower_rs::config::*;
+use cower_rs::package::*;
+use cower_rs::*;
+use failure::Error;
+use log::Level;
 use std::path::PathBuf;
 use std::{env, str};
-use cower_rs::*;
-use cower_rs::config::*;
-use log::Level;
-use failure::Error;
 
 fn main() -> Result<(), Error> {
-    let mut config = Config::new();
+    let mut config = Config::new(package::sort_name);
 
     // Check for a config file
     if let Some(path) = get_config_path() {
@@ -25,6 +27,11 @@ fn main() -> Result<(), Error> {
 
     // Handle command line arguments
     handle_command_line_args(&mut config)?;
+
+    // Get an Aur object
+    let _aur = AurT::new("https", &config.aur_domain);
+
+    if config.frompkgbuild {}
 
     // Everything worked out
     Ok(())
@@ -51,148 +58,180 @@ pub fn get_config_path() -> Option<PathBuf> {
 }
 
 /// Handle the command line arguments
-fn handle_command_line_args(config: &mut Config) -> Result<(), Error> {
+fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
     let matches = App::new("cower-rs")
         .version(get_version_string().unwrap().as_str())
         .author(crate_authors!("\n"))
         .about(crate_description!())
-        .arg(Arg::with_name("download")
-             .short("d")
-             .long("download")
-             .multiple(true)
-             .help("download target(s) -- pass twice to download AUR dependencies")
-            )
-        .arg(Arg::with_name("info")
-             .short("i")
-             .long("info")
-             .help("show info for target(s)")
-            )
-        .arg(Arg::with_name("msearch")
-             .short("m")
-             .long("msearch")
-             .help("show packages maintained by target(s)")
-            )
-        .arg(Arg::with_name("search")
-             .short("s")
-             .long("search")
-             .help("search for target(s)")
-            )
-        .arg(Arg::with_name("update")
-             .short("u")
-             .long("update")
-             .help("check for updates against AUR -- can be combined with the -d flag")
-            )
-        .group(ArgGroup::with_name("Operations")
-               .args(&["download", "info", "msearch", "search", "update"])
-               .required(true)
-               .multiple(true)
-              )
-        .arg(Arg::with_name("by")
-             .long("by")
-             .help("search by category")
-             .takes_value(true)
-             .value_name("search-by")
-             .possible_values(&["name", "name-desc", "maintainer"])
-            )
-        .arg(Arg::with_name("domain")
-             .long("domain")
-             .help("point cower at a different AUR (default: aur.archlinux.org)")
-             .takes_value(true)
-             .value_name("fqdn")
-            )
-        .arg(Arg::with_name("force")
-             .long("force")
-             .short("f")
-             .help("overwrite existing files when downloading")
-            )
-        .arg(Arg::with_name("ignore")
-             .long("ignore")
-             .help("ignore a package upgrade (can be used more than once")
-             .takes_value(true)
-             .value_name("pkg")
-             .multiple(true)
-            )
-        .arg(Arg::with_name("ignorerepo")
-             .long("ignorerepo")
-             .takes_value(true)
-             .value_name("repo")
-             .multiple(true)
-             .help("ignore some or all binary repos")
-            )
-        .arg(Arg::with_name("target")
-             .short("t")
-             .long("target")
-             .takes_value(true)
-             .help("specify an alternate download directory")
-            )
-        .arg(Arg::with_name("threads")
-             .long("threads")
-             .takes_value(true)
-             .help("limit number of threads created")
-            )
-        .arg(Arg::with_name("timeout")
-             .long("timeout")
-             .takes_value(true)
-             .help("specify connection timeout in seconds")
-            )
-        .arg(Arg::with_name("color")
-             .long("color")
-             .short("c")
-             .takes_value(true)
-             .value_name("WHEN")
-             .help("use colored output")
-             .possible_values(&["never", "always", "auto"])
-            )
-        .arg(Arg::with_name("debug")
-             .long("debug")
-             .help("show debug output")
-            )
-        .arg(Arg::with_name("format")
-             .long("format")
-             .takes_value(true)
-             .value_name("string")
-             .help("print package output according to format string")
-            )
-        .arg(Arg::with_name("ignore-ood")
-             .long("ignore-ood")
-             .short("o")
-             .help("the opposite of --ignore-ood")
-            )
-        .arg(Arg::with_name("sort")
-             .long("sort")
-             .takes_value(true)
-             .value_name("key")
-             .help("sort results in ascending order by key")
-             .possible_values(&["name", "version", "maintainer", "votes",
-                              "popularity", "outofdate", "lastmodified",
-                              "firstsubmitted"])
-            )
-        .arg(Arg::with_name("rsort")
-             .long("rsort")
-             .takes_value(true)
-             .value_name("key")
-             .help("sort results in descending order by key")
-            )
-        .arg(Arg::with_name("listdelim")
-             .long("listdelim")
-             .takes_value(true)
-             .value_name("delim")
-             .help("change list format delimeter")
-            )
-        .arg(Arg::with_name("literal")
-             .long("literal")
-             .help("disable regex search, interpret target as a literal string")
-            )
-        .arg(Arg::with_name("quiet")
-             .long("quiet")
-             .short("q")
-             .help("output less")
-            )
-        .arg(Arg::with_name("verbose")
-             .long("verbose")
-             .short("v")
-             .help("output more")
-            )
+        .arg(
+            Arg::with_name("download")
+                .short("d")
+                .long("download")
+                .multiple(true)
+                .help("download target(s) -- pass twice to download AUR dependencies"),
+        )
+        .arg(
+            Arg::with_name("info")
+                .short("i")
+                .long("info")
+                .help("show info for target(s)"),
+        )
+        .arg(
+            Arg::with_name("msearch")
+                .short("m")
+                .long("msearch")
+                .help("show packages maintained by target(s)"),
+        )
+        .arg(
+            Arg::with_name("search")
+                .short("s")
+                .long("search")
+                .help("search for target(s)"),
+        )
+        .arg(
+            Arg::with_name("update")
+                .short("u")
+                .long("update")
+                .help("check for updates against AUR -- can be combined with the -d flag"),
+        )
+        .group(
+            ArgGroup::with_name("Operations")
+                .args(&["download", "info", "msearch", "search", "update"])
+                .required(true)
+                .multiple(true),
+        )
+        .arg(
+            Arg::with_name("by")
+                .long("by")
+                .help("search by category")
+                .takes_value(true)
+                .value_name("search-by")
+                .possible_values(&["name", "name-desc", "maintainer"]),
+        )
+        .arg(
+            Arg::with_name("domain")
+                .long("domain")
+                .help("point cower at a different AUR (default: aur.archlinux.org)")
+                .takes_value(true)
+                .value_name("fqdn"),
+        )
+        .arg(
+            Arg::with_name("force")
+                .long("force")
+                .short("f")
+                .help("overwrite existing files when downloading"),
+        )
+        .arg(
+            Arg::with_name("ignore")
+                .long("ignore")
+                .help("ignore a package upgrade (can be used more than once")
+                .takes_value(true)
+                .value_name("pkg")
+                .multiple(true),
+        )
+        .arg(
+            Arg::with_name("ignorerepo")
+                .long("ignorerepo")
+                .takes_value(true)
+                .value_name("repo")
+                .multiple(true)
+                .help("ignore some or all binary repos"),
+        )
+        .arg(
+            Arg::with_name("target")
+                .short("t")
+                .long("target")
+                .takes_value(true)
+                .help("specify an alternate download directory"),
+        )
+        .arg(
+            Arg::with_name("threads")
+                .long("threads")
+                .takes_value(true)
+                .help("limit number of threads created"),
+        )
+        .arg(
+            Arg::with_name("timeout")
+                .long("timeout")
+                .takes_value(true)
+                .help("specify connection timeout in seconds"),
+        )
+        .arg(
+            Arg::with_name("color")
+                .long("color")
+                .short("c")
+                .takes_value(true)
+                .value_name("WHEN")
+                .help("use colored output")
+                .possible_values(&["never", "always", "auto"]),
+        )
+        .arg(
+            Arg::with_name("debug")
+                .long("debug")
+                .help("show debug output"),
+        )
+        .arg(
+            Arg::with_name("format")
+                .long("format")
+                .takes_value(true)
+                .value_name("string")
+                .help("print package output according to format string"),
+        )
+        .arg(
+            Arg::with_name("ignore-ood")
+                .long("ignore-ood")
+                .short("o")
+                .help("the opposite of --ignore-ood"),
+        )
+        .arg(
+            Arg::with_name("sort")
+                .long("sort")
+                .takes_value(true)
+                .value_name("key")
+                .help("sort results in ascending order by key")
+                .possible_values(&[
+                    "name",
+                    "version",
+                    "maintainer",
+                    "votes",
+                    "popularity",
+                    "outofdate",
+                    "lastmodified",
+                    "firstsubmitted",
+                ]),
+        )
+        .arg(
+            Arg::with_name("rsort")
+                .long("rsort")
+                .takes_value(true)
+                .value_name("key")
+                .help("sort results in descending order by key"),
+        )
+        .arg(
+            Arg::with_name("listdelim")
+                .long("listdelim")
+                .takes_value(true)
+                .value_name("delim")
+                .help("change list format delimeter"),
+        )
+        .arg(
+            Arg::with_name("literal")
+                .long("literal")
+                .help("disable regex search, interpret target as a literal string"),
+        )
+        .arg(
+            Arg::with_name("quiet")
+                .long("quiet")
+                .short("q")
+                .help("output less"),
+        )
+        .arg(
+            Arg::with_name("verbose")
+                .long("verbose")
+                .short("v")
+                .help("output more"),
+        )
+        .arg(Arg::with_name("args").multiple(true))
         .get_matches();
 
     // Operations
@@ -254,8 +293,22 @@ fn handle_command_line_args(config: &mut Config) -> Result<(), Error> {
         config.sortorder = SortOrder::Reverse;
     }
 
-    if matches.is_present("sort") {
-        unimplemented!();
+    if let Some(sort) = matches.value_of("sort") {
+        let _sort = sort.trim();
+        //match sort {
+        //    "name" => unimplemented!(),
+        //    "version" => unimplemented!(),
+        //    "maintainer" => unimplemented!(),
+        //    "votes" => unimplemented!(),
+        //    "popularity" => unimplemented!(),
+        //    "outofdate" => unimplemented!(),
+        //    "lastmodified" => unimplemented!(),
+        //    "firstsubmitted" => unimplemented!(),
+        //    _ => Err(Error::from(ConfigError::InvalidSortByArg {
+        //        val: sort.to_string(),
+        //    }))
+        //}
+        //config.set_sort_by(sort)?;
     }
 
     if let Some(ignore) = matches.values_of("ignore") {
@@ -288,6 +341,10 @@ fn handle_command_line_args(config: &mut Config) -> Result<(), Error> {
 
     if let Some(timeout) = matches.value_of("timeout") {
         config.timeout = timeout.parse()?
+    }
+
+    if let Some(args) = matches.values_of("args") {
+        config.args = args.map(String::from).collect();
     }
 
     Ok(())

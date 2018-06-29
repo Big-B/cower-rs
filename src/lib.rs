@@ -1,21 +1,24 @@
-#[macro_use] extern crate bitflags;
+#[macro_use]
+extern crate bitflags;
+extern crate ferris_says;
 extern crate isatty;
 extern crate log;
-extern crate time;
-extern crate ferris_says;
 extern crate serde;
 extern crate serde_json;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate failure;
+extern crate time;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate failure;
 extern crate url;
 
+pub mod aur;
 pub mod config;
 pub mod package;
-pub mod aur;
 
+use ferris_says::say;
 use std::io::BufWriter;
 use std::string::FromUtf8Error;
-use ferris_says::say;
 
 pub fn get_version_string() -> Result<String, FromUtf8Error> {
     // Make cower cow
