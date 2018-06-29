@@ -294,21 +294,18 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
     }
 
     if let Some(sort) = matches.value_of("sort") {
-        let _sort = sort.trim();
-        //match sort {
-        //    "name" => unimplemented!(),
-        //    "version" => unimplemented!(),
-        //    "maintainer" => unimplemented!(),
-        //    "votes" => unimplemented!(),
-        //    "popularity" => unimplemented!(),
-        //    "outofdate" => unimplemented!(),
-        //    "lastmodified" => unimplemented!(),
-        //    "firstsubmitted" => unimplemented!(),
-        //    _ => Err(Error::from(ConfigError::InvalidSortByArg {
-        //        val: sort.to_string(),
-        //    }))
-        //}
-        //config.set_sort_by(sort)?;
+        let sort = sort.trim();
+        config.sort_func = match sort {
+            "name" => sort_name,
+            "version" => unimplemented!(),
+            "maintainer" => sort_cmpmaint,
+            "votes" => sort_cmpvotes,
+            "popularity" => sort_cmppopularity,
+            "outofdate" => sort_cmpood,
+            "lastmodified" => sort_cmplastmod,
+            "firstsubmitted" => sort_cmpfirstsub,
+            _ => unreachable!(),
+        }
     }
 
     if let Some(ignore) = matches.values_of("ignore") {
