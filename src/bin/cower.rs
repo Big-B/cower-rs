@@ -6,7 +6,7 @@ extern crate stderrlog;
 
 extern crate cower_rs;
 
-use clap::{App, Arg, ArgGroup};
+use clap::{App, Arg, ArgGroup, ArgMatches};
 use cower_rs::aur::*;
 use cower_rs::config::*;
 use cower_rs::package::*;
@@ -235,30 +235,7 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
         .get_matches();
 
     // Operations
-    if matches.is_present("search") {
-        config.opmask.insert(OpMask::SEARCH);
-    }
-
-    if matches.is_present("update") {
-        config.opmask.insert(OpMask::UPDATE);
-    }
-
-    if matches.is_present("info") {
-        config.opmask.insert(OpMask::INFO);
-    }
-
-    // Can be passed more than once
-    if matches.is_present("download") {
-        config.opmask.insert(OpMask::DOWNLOAD);
-        if matches.occurrences_of("download") > 1 {
-            config.getdeps = true;
-        }
-    }
-
-    if matches.is_present("msearch") {
-        config.opmask.insert(OpMask::SEARCH);
-        config.search_by = SearchBy::Maintainer;
-    }
+    parse_operations(config, &matches);
 
     // Options
     if let Some(color) = matches.value_of("color") {
@@ -344,4 +321,32 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+/// Parse out the operations portion of the commandline arguments
+fn parse_operations(config: &mut Config<AurPkg>, args: &ArgMatches) {
+    if args.is_present("search") {
+        config.opmask.insert(OpMask::SEARCH);
+    }
+
+    if args.is_present("update") {
+        config.opmask.insert(OpMask::UPDATE);
+    }
+
+    if args.is_present("info") {
+        config.opmask.insert(OpMask::INFO);
+    }
+
+    // Can be passed more than once
+    if args.is_present("download") {
+        config.opmask.insert(OpMask::DOWNLOAD);
+        if args.occurrences_of("download") > 1 {
+            config.getdeps = true;
+        }
+    }
+
+    if args.is_present("msearch") {
+        config.opmask.insert(OpMask::SEARCH);
+        config.search_by = SearchBy::Maintainer;
+    }
 }
