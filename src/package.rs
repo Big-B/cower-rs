@@ -119,9 +119,12 @@ pub fn sort_cmpver(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
     }
 }
 
-#[test]
-fn test_parsing_json() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    const JSON_EXAMPLE: &str = r#"{
         "version":5,
         "type":"multiinfo",
         "resultcount":1,
@@ -156,48 +159,68 @@ fn test_parsing_json() {
         }]
     }"#;
 
-    let input = aur_packages_from_json(data);
-    assert!(input.is_ok());
+    #[bench]
+    fn bench_sort_cmpver(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        let pkg1 = &input[0];
+        let pkg2 = &input[0];
 
-    let input = input.unwrap();
-    assert_eq!(input.len(), 1);
+        b.iter(|| sort_cmpver(&pkg1, &pkg2))
+    }
 
-    let input = &input[0];
-    assert_eq!(input.package_id, 229417);
-    assert_eq!(input.name, "cower");
-    assert_eq!(input.pkgbaseid, 44921);
-    assert_eq!(input.version, "14-2");
-    assert_eq!(
-        input.description,
-        "A simple AUR agent with a pretentious name"
-    );
-    assert_eq!(input.upstream_url, "http://github.com/falconindy/cower");
-    assert_eq!(input.votes, 590);
-    assert_eq!(input.popularity, 24.595536);
-    assert!(input.out_of_date.is_none());
-    assert_eq!(input.maintainer, "falconindy");
-    assert_eq!(input.submitted_s, 1293676237);
-    assert_eq!(input.modified_s, 1441804093);
-    assert_eq!(input.aur_urlpath, "/cgit/aur.git/snapshot/cower.tar.gz");
+    #[bench]
+    fn bench_sort_cmpmaint(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        let pkg1 = &input[0];
+        let pkg2 = &input[0];
 
-    assert_eq!(input.depends.len(), 4);
-    assert_eq!(input.depends[0], "curl");
-    assert_eq!(input.depends[1], "openssl");
-    assert_eq!(input.depends[2], "pacman");
-    assert_eq!(input.depends[3], "yajl");
+        b.iter(|| sort_cmpmaint(&pkg1, &pkg2))
+    }
 
-    assert_eq!(input.makedepends.len(), 1);
-    assert_eq!(input.makedepends[0], "perl");
+    #[test]
+    fn test_parsing_json() {
+        let input = aur_packages_from_json(JSON_EXAMPLE);
+        assert!(input.is_ok());
 
-    assert_eq!(input.licenses.len(), 1);
-    assert_eq!(input.licenses[0], "MIT");
+        let input = input.unwrap();
+        assert_eq!(input.len(), 1);
 
-    assert_eq!(input.keywords.len(), 0);
-}
+        let input = &input[0];
+        assert_eq!(input.package_id, 229417);
+        assert_eq!(input.name, "cower");
+        assert_eq!(input.pkgbaseid, 44921);
+        assert_eq!(input.version, "14-2");
+        assert_eq!(
+            input.description,
+            "A simple AUR agent with a pretentious name"
+            );
+        assert_eq!(input.upstream_url, "http://github.com/falconindy/cower");
+        assert_eq!(input.votes, 590);
+        assert_eq!(input.popularity, 24.595536);
+        assert!(input.out_of_date.is_none());
+        assert_eq!(input.maintainer, "falconindy");
+        assert_eq!(input.submitted_s, 1293676237);
+        assert_eq!(input.modified_s, 1441804093);
+        assert_eq!(input.aur_urlpath, "/cgit/aur.git/snapshot/cower.tar.gz");
 
-#[test]
-fn test_parsing_search() {
-    let data = r#"{
+        assert_eq!(input.depends.len(), 4);
+        assert_eq!(input.depends[0], "curl");
+        assert_eq!(input.depends[1], "openssl");
+        assert_eq!(input.depends[2], "pacman");
+        assert_eq!(input.depends[3], "yajl");
+
+        assert_eq!(input.makedepends.len(), 1);
+        assert_eq!(input.makedepends[0], "perl");
+
+        assert_eq!(input.licenses.len(), 1);
+        assert_eq!(input.licenses[0], "MIT");
+
+        assert_eq!(input.keywords.len(), 0);
+    }
+
+    #[test]
+    fn test_parsing_search() {
+        let data = r#"{
         "version":5,
         "type":"search",
         "resultcount":4,
@@ -267,9 +290,10 @@ fn test_parsing_search() {
         }]
     }"#;
 
-    let input = aur_packages_from_json(data);
-    assert!(input.is_ok());
+        let input = aur_packages_from_json(data);
+        assert!(input.is_ok());
 
-    let input = input.unwrap();
-    assert_eq!(input.len(), 4);
+        let input = input.unwrap();
+        assert_eq!(input.len(), 4);
+    }
 }

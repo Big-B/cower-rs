@@ -1,3 +1,4 @@
+#![feature(test)]
 #[macro_use]
 extern crate bitflags;
 extern crate ferris_says;
@@ -11,6 +12,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate failure;
 extern crate url;
+extern crate test;
 
 pub mod alpm;
 pub mod aur;
