@@ -4,7 +4,6 @@ version = "0.2.0"
 authors = ["Brandon Mittman <brandonmittman@gmail.com>"]
 
 [profile.release]
-panic = 'abort'
 lto = true
 
 [dependencies]

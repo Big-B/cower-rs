@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+#[macro_use]
 extern crate failure;
 extern crate log;
 extern crate stderrlog;
@@ -16,6 +17,12 @@ use log::Level;
 use std::path::PathBuf;
 use std::{env, str};
 
+#[derive(Debug, Fail)]
+pub enum CowerError {
+    #[fail(display = "Invalid Operation")]
+    InvalidOperation,
+}
+
 fn main() -> Result<(), Error> {
     let mut config = Config::new(package::sort_name);
 
@@ -27,6 +34,8 @@ fn main() -> Result<(), Error> {
 
     // Handle command line arguments
     handle_command_line_args(&mut config)?;
+
+    check_operation_combinations(&config)?;
 
     // Get an Aur object
     let _aur = AurT::new("https", &config.aur_domain);
@@ -348,5 +357,22 @@ fn parse_operations(config: &mut Config<AurPkg>, args: &ArgMatches) {
     if args.is_present("msearch") {
         config.opmask.insert(OpMask::SEARCH);
         config.search_by = SearchBy::Maintainer;
+    }
+}
+
+fn check_operation_combinations(config: &Config<AurPkg>) -> Result<(), Error> {
+    let info = OpMask::INFO;
+    let search = OpMask::SEARCH;
+    let updown = OpMask::UPDATE | OpMask::DOWNLOAD;
+
+    // Check the combinations, ensure they're valid
+    if config.opmask.contains(info) && config.opmask.intersects(!info) {
+        Err(Error::from(CowerError::InvalidOperation))
+    } else if config.opmask.contains(search) && config.opmask.intersects(!search) {
+        Err(Error::from(CowerError::InvalidOperation))
+    } else if config.opmask.contains(updown) && config.opmask.intersects(!updown) {
+        Err(Error::from(CowerError::InvalidOperation))
+    } else {
+        Ok(())
     }
 }
