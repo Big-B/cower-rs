@@ -1,6 +1,8 @@
+use alpm::alpm_pkg_vercmp;
 use failure::Error;
 use serde_json;
 use std::cmp::Ordering;
+use std::ffi::CString;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Query {
@@ -100,6 +102,21 @@ pub fn sort_cmplastmod(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
 
 pub fn sort_cmpfirstsub(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
     pkg1.submitted_s.cmp(&pkg2.submitted_s)
+}
+
+pub fn sort_cmpver(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
+    let ver_str_1 = CString::new(pkg1.version.clone()).unwrap().as_ptr();
+    let ver_str_2 = CString::new(pkg2.version.clone()).unwrap().as_ptr();
+
+    // Call into libalpm, pass c strings and get back an int
+    let cmp = unsafe { alpm_pkg_vercmp(ver_str_1, ver_str_2) }.signum();
+
+    match cmp {
+        0 => Ordering::Equal,
+        1 => Ordering::Greater,
+        -1 => Ordering::Less,
+        _ => unreachable!(),
+    }
 }
 
 #[test]

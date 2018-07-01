@@ -12,6 +12,7 @@ extern crate serde_derive;
 extern crate failure;
 extern crate url;
 
+pub mod alpm;
 pub mod aur;
 pub mod config;
 pub mod package;

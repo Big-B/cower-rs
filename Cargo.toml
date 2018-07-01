@@ -20,3 +20,6 @@ serde_json     = "*"
 serde_derive   = "*"
 failure        = "*"
 url            = "*"
+
+[build-dependencies]
+bindgen = "*"

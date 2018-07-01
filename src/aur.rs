@@ -51,7 +51,7 @@ impl AurT {
         }
     }
 
-    pub fn aur_build_rpc_search_url(&self, rpc_by: &RpcBy, arg: &str) -> Result<Url, Error> {
+    pub fn aur_build_rpc_search_url(&self, rpc_by: RpcBy, arg: &str) -> Result<Url, Error> {
         // Setup url object
         let mut url = Url::parse(&self.url_prefix)?;
         url.set_path("rpc.php");
