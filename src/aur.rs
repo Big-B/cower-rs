@@ -73,65 +73,70 @@ impl AurT {
     }
 }
 
-#[test]
-fn test_new_aur_t() {
-    let aur = AurT::new("https", "aur.archlinux.com");
-    assert_eq!(aur.rpc_version, 5);
-    assert_eq!(aur.url_prefix, "https://aur.archlinux.com");
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_rpc_info_url_with_single_arg() {
-    let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&vec!["cower"]);
-    assert!(url.is_ok());
+    #[test]
+    fn test_new_aur_t() {
+        let aur = AurT::new("https", "aur.archlinux.com");
+        assert_eq!(aur.rpc_version, 5);
+        assert_eq!(aur.url_prefix, "https://aur.archlinux.com");
+    }
 
-    let url = url.unwrap();
-    assert_eq!(url.scheme(), "https");
-    assert_eq!(url.host_str(), Some("aur.archlinux.com"));
-    assert_eq!(url.path(), "/rpc.php");
-    assert_eq!(url.query(), Some("v=5&type=info&arg%5B%5D=cower"));
-    assert_eq!(
-        url.as_str(),
-        "https://aur.archlinux.com/rpc.php?v=5&type=info&arg%5B%5D=cower"
-    );
-}
+    #[test]
+    fn test_rpc_info_url_with_single_arg() {
+        let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&vec!["cower"]);
+        assert!(url.is_ok());
 
-#[test]
-fn test_rpc_info_url_with_multiple_arg() {
-    use std::borrow::Cow;
+        let url = url.unwrap();
+        assert_eq!(url.scheme(), "https");
+        assert_eq!(url.host_str(), Some("aur.archlinux.com"));
+        assert_eq!(url.path(), "/rpc.php");
+        assert_eq!(url.query(), Some("v=5&type=info&arg%5B%5D=cower"));
+        assert_eq!(
+            url.as_str(),
+            "https://aur.archlinux.com/rpc.php?v=5&type=info&arg%5B%5D=cower"
+            );
+    }
 
-    let vec = vec!["cower", "pacaur", "some other package"];
-    let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&vec);
-    assert!(url.is_ok());
+    #[test]
+    fn test_rpc_info_url_with_multiple_arg() {
+        use std::borrow::Cow;
 
-    let url = url.unwrap();
-    let mut pairs = url.query_pairs();
+        let vec = vec!["cower", "pacaur", "some other package"];
+        let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&vec);
+        assert!(url.is_ok());
 
-    // We subtract 2 for v=5 and type=info
-    assert_eq!(vec.len(), pairs.count() - 2);
-    assert_eq!(pairs.next(), Some((Cow::Borrowed("v"), Cow::Borrowed("5"))));
-    assert_eq!(
-        pairs.next(),
-        Some((Cow::Borrowed("type"), Cow::Borrowed("info")))
-    );
-    for arg in vec {
+        let url = url.unwrap();
+        let mut pairs = url.query_pairs();
+
+        // We subtract 2 for v=5 and type=info
+        assert_eq!(vec.len(), pairs.count() - 2);
+        assert_eq!(pairs.next(), Some((Cow::Borrowed("v"), Cow::Borrowed("5"))));
         assert_eq!(
             pairs.next(),
-            Some((Cow::Borrowed("arg[]"), Cow::Borrowed(arg)))
-        );
+            Some((Cow::Borrowed("type"), Cow::Borrowed("info")))
+            );
+        for arg in vec {
+            assert_eq!(
+                pairs.next(),
+                Some((Cow::Borrowed("arg[]"), Cow::Borrowed(arg)))
+                );
+        }
     }
-}
 
-#[test]
-fn test_rpc_info_url_with_no_arg() {
-    let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&Vec::new());
-    assert!(url.is_err());
-}
+    #[test]
+    fn test_rpc_info_url_with_no_arg() {
+        let url = AurT::new("https", "aur.archlinux.com").aur_build_rpc_info_url(&Vec::new());
+        assert!(url.is_err());
+    }
 
-#[test]
-fn test_rpc_search_url() {
-    let url = AurT::new("https", "aur.archlinux.com")
-        .aur_build_rpc_search_url(RpcBy::SearchByName, "cower");
+    #[test]
+    fn test_rpc_search_url() {
+        let url = AurT::new("https", "aur.archlinux.com")
+            .aur_build_rpc_search_url(RpcBy::SearchByName, "cower");
 
-    assert!(url.is_ok());
+        assert!(url.is_ok());
+    }
 }

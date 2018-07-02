@@ -160,21 +160,51 @@ mod tests {
     }"#;
 
     #[bench]
-    fn bench_sort_cmpver(b: &mut Bencher) {
+    fn bench_sort_name(b: &mut Bencher) {
         let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
-        let pkg1 = &input[0];
-        let pkg2 = &input[0];
-
-        b.iter(|| sort_cmpver(&pkg1, &pkg2))
+        b.iter(|| sort_name(&&input[0], &&input[0]))
     }
 
     #[bench]
     fn bench_sort_cmpmaint(b: &mut Bencher) {
         let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
-        let pkg1 = &input[0];
-        let pkg2 = &input[0];
+        b.iter(|| sort_cmpmaint(&&input[0], &&input[0]))
+    }
 
-        b.iter(|| sort_cmpmaint(&pkg1, &pkg2))
+    #[bench]
+    fn bench_sort_cmpvotes(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmpvotes(&&input[0], &&input[0]))
+    }
+
+    #[bench]
+    fn bench_sort_cmppopularity(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmppopularity(&&input[0], &&input[0]))
+    }
+
+    #[bench]
+    fn bench_sort_cmpood(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmpood(&&input[0], &&input[0]))
+    }
+
+    #[bench]
+    fn bench_sort_cmplastmod(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmplastmod(&&input[0], &&input[0]))
+    }
+
+    #[bench]
+    fn bench_sort_cmpfirstsub(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmpfirstsub(&&input[0], &&input[0]))
+    }
+
+    #[bench]
+    fn bench_sort_cmpver(b: &mut Bencher) {
+        let input = aur_packages_from_json(JSON_EXAMPLE).unwrap();
+        b.iter(|| sort_cmpver(&&input[0], &&input[0]))
     }
 
     #[test]
