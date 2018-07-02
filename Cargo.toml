@@ -19,6 +19,7 @@ serde_json     = "*"
 serde_derive   = "*"
 failure        = "*"
 url            = "*"
+regex          = "*"
 
 [build-dependencies]
 bindgen = "*"

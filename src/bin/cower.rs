@@ -4,6 +4,7 @@ extern crate clap;
 extern crate failure;
 extern crate log;
 extern crate stderrlog;
+extern crate regex;
 
 extern crate cower_rs;
 
@@ -16,11 +17,14 @@ use failure::Error;
 use log::Level;
 use std::path::PathBuf;
 use std::{env, str};
+use regex::Regex;
 
 #[derive(Debug, Fail)]
 pub enum CowerError {
     #[fail(display = "Invalid Operation")]
     InvalidOperation,
+    #[fail(display = "Invalid Regex: {}", regex)]
+    InvalidRegexes { regex: String }
 }
 
 fn main() -> Result<(), Error> {
@@ -329,9 +333,21 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
 
     check_operation_combinations(&config)?;
 
+    // Handle regexes
     if allow_regex(&config) {
         // Check for valid regexes from args
-        unimplemented!();
+        let regexes: Vec<String> = config.args.iter()
+            .filter(|arg| Regex::new(arg).is_err())
+            .cloned()
+            .collect();
+
+        // If there are bad regexes, let's print them out
+        // and report them
+        if !regexes.is_empty() {
+            return Err(Error::from(CowerError::InvalidRegexes {
+                regex: regexes.join("\n").trim().to_string(),
+            }));
+        }
     }
 
     Ok(())
