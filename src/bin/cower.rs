@@ -35,8 +35,6 @@ fn main() -> Result<(), Error> {
     // Handle command line arguments
     handle_command_line_args(&mut config)?;
 
-    check_operation_combinations(&config)?;
-
     // Get an Aur object
     let _aur = AurT::new("https", &config.aur_domain);
 
@@ -329,6 +327,13 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
         config.args = args.map(String::from).collect();
     }
 
+    check_operation_combinations(&config)?;
+
+    if allow_regex(&config) {
+        // Check for valid regexes from args
+        unimplemented!();
+    }
+
     Ok(())
 }
 
@@ -366,13 +371,18 @@ fn check_operation_combinations(config: &Config<AurPkg>) -> Result<(), Error> {
     let updown = OpMask::UPDATE | OpMask::DOWNLOAD;
 
     // Check the combinations, ensure they're valid
-    if config.opmask.contains(info) && config.opmask.intersects(!info) {
-        Err(Error::from(CowerError::InvalidOperation))
-    } else if config.opmask.contains(search) && config.opmask.intersects(!search) {
-        Err(Error::from(CowerError::InvalidOperation))
-    } else if config.opmask.contains(updown) && config.opmask.intersects(!updown) {
+    if config.opmask.contains(info) && config.opmask.intersects(!info)
+        || config.opmask.contains(search) && config.opmask.intersects(!search)
+        || config.opmask.contains(updown) && config.opmask.intersects(!updown)
+    {
         Err(Error::from(CowerError::InvalidOperation))
     } else {
         Ok(())
     }
+}
+
+fn allow_regex(config: &Config<AurPkg>) -> bool {
+    config.opmask.contains(OpMask::SEARCH)
+        && !config.literal
+        && config.search_by != SearchBy::Maintainer
 }

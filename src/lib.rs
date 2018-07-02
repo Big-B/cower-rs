@@ -11,8 +11,8 @@ extern crate time;
 extern crate serde_derive;
 #[macro_use]
 extern crate failure;
-extern crate url;
 extern crate test;
+extern crate url;
 
 pub mod alpm;
 pub mod aur;

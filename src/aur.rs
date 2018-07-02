@@ -1,6 +1,7 @@
 use failure::Error;
 use url::Url;
 
+#[derive(Copy, Clone)]
 pub enum RpcBy {
     SearchByName,
     SearchByNameDesc,
@@ -97,7 +98,7 @@ mod tests {
         assert_eq!(
             url.as_str(),
             "https://aur.archlinux.com/rpc.php?v=5&type=info&arg%5B%5D=cower"
-            );
+        );
     }
 
     #[test]
@@ -117,12 +118,12 @@ mod tests {
         assert_eq!(
             pairs.next(),
             Some((Cow::Borrowed("type"), Cow::Borrowed("info")))
-            );
+        );
         for arg in vec {
             assert_eq!(
                 pairs.next(),
                 Some((Cow::Borrowed("arg[]"), Cow::Borrowed(arg)))
-                );
+            );
         }
     }
 

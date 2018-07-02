@@ -7,6 +7,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::PathBuf;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum SearchBy {
     Name,
     NameDesc,

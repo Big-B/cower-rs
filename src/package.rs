@@ -105,11 +105,11 @@ pub fn sort_cmpfirstsub(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
 }
 
 pub fn sort_cmpver(pkg1: &AurPkg, pkg2: &AurPkg) -> Ordering {
-    let ver_str_1 = CString::new(pkg1.version.clone()).unwrap().as_ptr();
-    let ver_str_2 = CString::new(pkg2.version.clone()).unwrap().as_ptr();
+    let ver_str_1 = CString::new(pkg1.version.clone()).unwrap();
+    let ver_str_2 = CString::new(pkg2.version.clone()).unwrap();
 
     // Call into libalpm, pass c strings and get back an int
-    let cmp = unsafe { alpm_pkg_vercmp(ver_str_1, ver_str_2) }.signum();
+    let cmp = unsafe { alpm_pkg_vercmp(ver_str_1.as_ptr(), ver_str_2.as_ptr()) }.signum();
 
     match cmp {
         0 => Ordering::Equal,
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(
             input.description,
             "A simple AUR agent with a pretentious name"
-            );
+        );
         assert_eq!(input.upstream_url, "http://github.com/falconindy/cower");
         assert_eq!(input.votes, 590);
         assert_eq!(input.popularity, 24.595536);
