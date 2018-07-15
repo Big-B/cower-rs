@@ -5,6 +5,7 @@ extern crate failure;
 extern crate log;
 extern crate stderrlog;
 extern crate regex;
+extern crate dirs;
 
 extern crate cower_rs;
 
@@ -56,7 +57,7 @@ pub fn get_config_path() -> Option<PathBuf> {
     if let Ok(path) = env::var("XDG_CONFIG_HOME") {
         path_buf.push(path);
         path_buf.push("cower/config");
-    } else if let Some(path) = env::home_dir() {
+    } else if let Some(path) = dirs::home_dir() {
         path_buf.push(path);
         path_buf.push(".config/cower/config");
     }
