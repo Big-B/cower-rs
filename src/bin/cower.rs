@@ -434,17 +434,11 @@ fn load_targets_from_files(files: Vec<PathBuf>) -> Result<Vec<String>, Error> {
     let mut all_deps = Vec::new();
     for file in files {
         let mut f = File::open(file)?;
-        let deps = get_dependencies_from_srcinfo(f)?;
+        let mut deps = get_dependencies_from_srcinfo(f)?;
 
         // Get all the strings, split them at the special characters '<' and '>' and keep
         // the prefix, discard the suffix (version number)
-        all_deps.append(
-            &mut deps
-                .iter()
-                .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>(),
-        );
+        all_deps.append(&mut deps);
     }
     all_deps.sort_unstable();
     all_deps.dedup();
@@ -476,6 +470,13 @@ where
         }
         line.clear();
     }
+
+    // Strip version information leftover from the string splitting
+    let deps = deps
+        .iter()
+        .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
+        .map(|s| s.to_owned())
+        .collect::<Vec<String>>();
 
     Ok(deps)
 }
@@ -534,11 +535,11 @@ pkgname = aurutils
         assert!(deps.is_ok());
         let deps = deps.unwrap();
         assert_eq!(deps.len(), 5);
-        assert!(deps.contains(&"pacman>".to_owned()));
+        assert!(deps.contains(&"pacman".to_owned()));
         // Will contain two instances of "git"
         assert!(deps.contains(&"git".to_owned()));
         assert!(deps.contains(&"jq".to_owned()));
-        assert!(deps.contains(&"pacutils>".to_owned()));
+        assert!(deps.contains(&"pacutils".to_owned()));
     }
 
     #[test]
