@@ -562,6 +562,5 @@ pkgname = aurutils
         assert!(deps.contains(&"git".to_owned()));
         assert!(deps.contains(&"jq".to_owned()));
         assert!(deps.contains(&"pacutils".to_owned()));
-        assert!(false);
     }
 }
