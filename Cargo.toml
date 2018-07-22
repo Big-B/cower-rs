@@ -21,6 +21,7 @@ failure        = "*"
 url            = "*"
 regex          = "*"
 dirs           = "*"
+tempdir        = "*"
 
 [build-dependencies]
 bindgen = "*"
