@@ -436,10 +436,13 @@ fn load_targets_from_files(files: Vec<String>) -> Result<Vec<String>, Error> {
 
         // Get all the strings, split them at the special characters '<' and '>' and keep
         // the prefix, discard the suffix (version number)
-        all_deps.append(&mut deps.iter()
-            .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>());
+        all_deps.append(
+            &mut deps
+                .iter()
+                .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>(),
+        );
     }
     all_deps.sort_unstable();
     all_deps.dedup();
@@ -448,7 +451,9 @@ fn load_targets_from_files(files: Vec<String>) -> Result<Vec<String>, Error> {
 
 /// Get the dependencies from a .SRCINFO file
 fn get_dependencies_from_srcinfo<T>(file: T) -> Result<Vec<String>, Error>
-where T: Read {
+where
+    T: Read,
+{
     let mut r = BufReader::new(file);
     let mut line = String::new();
     let mut deps = Vec::new();
@@ -460,7 +465,6 @@ where T: Read {
 
             // Bounds check
             if params.len() > 1 {
-
                 // Get the dependencies
                 match params[0] {
                     "depends" | "checkdepends" | "makedepends" => deps.push(params[1].to_owned()),
