@@ -66,7 +66,7 @@ pub struct Config<T> {
     pub literal: bool,
     pub quiet: bool,
     pub skiprepos: bool,
-    pub frompkgbuild: bool,
+    pub srcinfo: bool,
     pub maxthreads: u64,
     pub timeout: u64,
 
@@ -97,7 +97,7 @@ impl<T> Config<T> {
             literal: false,
             quiet: false,
             skiprepos: false,
-            frompkgbuild: false,
+            srcinfo: false,
             maxthreads: 10,
             timeout: 10,
 

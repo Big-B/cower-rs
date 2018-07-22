@@ -2,10 +2,10 @@
 extern crate clap;
 #[macro_use]
 extern crate failure;
-extern crate log;
-extern crate stderrlog;
-extern crate regex;
 extern crate dirs;
+extern crate log;
+extern crate regex;
+extern crate stderrlog;
 
 extern crate cower_rs;
 
@@ -16,16 +16,19 @@ use cower_rs::package::*;
 use cower_rs::*;
 use failure::Error;
 use log::Level;
+use regex::Regex;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
 use std::path::PathBuf;
 use std::{env, str};
-use regex::Regex;
 
 #[derive(Debug, Fail)]
 pub enum CowerError {
     #[fail(display = "Invalid Operation")]
     InvalidOperation,
     #[fail(display = "Invalid Regex: {}", regex)]
-    InvalidRegexes { regex: String }
+    InvalidRegexes { regex: String },
 }
 
 fn main() -> Result<(), Error> {
@@ -43,7 +46,11 @@ fn main() -> Result<(), Error> {
     // Get an Aur object
     let _aur = AurT::new("https", &config.aur_domain);
 
-    if config.frompkgbuild {}
+    if config.srcinfo {
+        config.args = load_targets_from_files(config.args)?;
+    } else if config.args.contains(&String::from("-")) {
+        unimplemented!();
+    }
 
     // Everything worked out
     Ok(())
@@ -243,6 +250,12 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
                 .short("v")
                 .help("output more"),
         )
+        .arg(
+            Arg::with_name("from-srcinfo")
+                .long("from-srcinfo")
+                .short("p")
+                .help("use .SRCINFO files to determine targets"),
+        )
         .arg(Arg::with_name("args").multiple(true))
         .get_matches();
 
@@ -328,6 +341,10 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
         config.timeout = timeout.parse()?
     }
 
+    if matches.is_present("from-srcinfo") {
+        config.srcinfo = true;
+    }
+
     if let Some(args) = matches.values_of("args") {
         config.args = args.map(String::from).collect();
     }
@@ -337,7 +354,9 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
     // Handle regexes
     if allow_regex(&config) {
         // Check for valid regexes from args
-        let regexes: Vec<String> = config.args.iter()
+        let regexes: Vec<String> = config
+            .args
+            .iter()
             .filter(|arg| Regex::new(arg).is_err())
             .cloned()
             .collect();
@@ -382,6 +401,7 @@ fn parse_operations(config: &mut Config<AurPkg>, args: &ArgMatches) {
     }
 }
 
+/// Ensure that the mode argument combinations are valid
 fn check_operation_combinations(config: &Config<AurPkg>) -> Result<(), Error> {
     let info = OpMask::INFO;
     let search = OpMask::SEARCH;
@@ -398,8 +418,53 @@ fn check_operation_combinations(config: &Config<AurPkg>) -> Result<(), Error> {
     }
 }
 
+/// Determine whether or not regexes as arguments are valid inputs
 fn allow_regex(config: &Config<AurPkg>) -> bool {
     config.opmask.contains(OpMask::SEARCH)
         && !config.literal
         && config.search_by != SearchBy::Maintainer
+}
+
+/// Get all the dependencies from the given files and return them in a
+/// deduped list.
+fn load_targets_from_files(files: Vec<String>) -> Result<Vec<String>, Error> {
+    let mut all_deps = Vec::new();
+    for file in files {
+        let mut f = File::open(file)?;
+        let deps = get_dependencies_from_srcinfo(f)?;
+
+        // Get all the strings, split them at the special characters '<' and '>' and keep
+        // the prefix, discard the suffix (version number)
+        all_deps.append(&mut deps.iter()
+            .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>());
+    }
+    Ok(all_deps)
+}
+
+/// Get the dependencies from a .SRCINFO file
+fn get_dependencies_from_srcinfo<T>(file: T) -> Result<Vec<String>, Error>
+where T: Read {
+    let mut r = BufReader::new(file);
+    let mut line = String::new();
+    let mut deps = Vec::new();
+
+    // Get each line and split it into its parts
+    while r.read_line(&mut line).is_ok() {
+        let params: Vec<&str> = line.split('=').map(|s| s.trim()).collect();
+
+        // Bounds check
+        if params.len() < 2 {
+            continue;
+        }
+
+        // Get the dependencies
+        match params[0] {
+            "depends" | "checkdepends" | "makedepends" => deps.push(params[1].to_owned()),
+            _ => continue,
+        };
+    }
+
+    Ok(deps)
 }
