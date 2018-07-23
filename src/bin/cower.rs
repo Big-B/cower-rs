@@ -52,9 +52,14 @@ fn main() -> Result<(), Error> {
         let files: Vec<PathBuf> = config.args.iter().map(|s| PathBuf::from(s)).collect();
         config.args = load_targets_from_files(files)?;
     } else if config.args.contains(&String::from("-")) {
-        unimplemented!();
+        // Remove '-' from the list, read targets from stdin
+        config.args = config.args.iter().filter(|s| *s != "-").map(|s| (*s).clone()).collect::<Vec<String>>();
+        let stdin = std::io::stdin();
+        let mut targets = read_targets_space_separated(stdin.lock())?;
+        config.args.append(&mut targets);
     }
 
+    unimplemented!();
     // Everything worked out
     Ok(())
 }
@@ -433,6 +438,7 @@ fn allow_regex(config: &Config<AurPkg>) -> bool {
 fn load_targets_from_files(files: Vec<PathBuf>) -> Result<Vec<String>, Error> {
     let mut all_deps = Vec::new();
     for file in files {
+        // open the file and get the dependencies from each file
         let mut f = File::open(file)?;
         let mut deps = get_dependencies_from_srcinfo(f)?;
 
@@ -440,6 +446,8 @@ fn load_targets_from_files(files: Vec<PathBuf>) -> Result<Vec<String>, Error> {
         // the prefix, discard the suffix (version number)
         all_deps.append(&mut deps);
     }
+
+    // Sort and dedup
     all_deps.sort_unstable();
     all_deps.dedup();
     Ok(all_deps)
@@ -478,6 +486,28 @@ where
         .map(|s| s.to_owned())
         .collect::<Vec<String>>();
 
+    Ok(deps)
+}
+
+/// Read a space separated list of targets, like from stdin
+fn read_targets_space_separated<T>(file: T) -> Result<Vec<String>, Error>
+where
+    T: Read,
+{
+    let mut r = BufReader::new(file);
+    let mut line = String::new();
+    let mut deps = Vec::new();
+
+    // Get each line and split it into its parts
+    while r.read_line(&mut line)? != 0 {
+        let mut input = line.split_whitespace().map(|s| (*s).to_owned()).collect::<Vec<String>>();
+        deps.append(&mut input);
+        line.clear();
+    }
+
+    // sort and dedup
+    deps.sort_unstable();
+    deps.dedup();
     Ok(deps)
 }
 
@@ -563,5 +593,22 @@ pkgname = aurutils
         assert!(deps.contains(&"git".to_owned()));
         assert!(deps.contains(&"jq".to_owned()));
         assert!(deps.contains(&"pacutils".to_owned()));
+    }
+
+    #[test]
+    fn test_read_targets_space_separated() {
+        let deps_example = "pacman git jq   pacutils 	git\narch bin\ngit".as_bytes();
+
+        let deps = read_targets_space_separated(deps_example);
+        assert!(deps.is_ok());
+
+        let deps = deps.unwrap();
+        assert_eq!(deps.len(), 6);
+        assert!(deps.contains(&"pacman".to_owned()));
+        assert!(deps.contains(&"git".to_owned()));
+        assert!(deps.contains(&"jq".to_owned()));
+        assert!(deps.contains(&"pacutils".to_owned()));
+        assert!(deps.contains(&"arch".to_owned()));
+        assert!(deps.contains(&"bin".to_owned()));
     }
 }
