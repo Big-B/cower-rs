@@ -49,11 +49,16 @@ fn main() -> Result<(), Error> {
     let _aur = AurT::new("https", &config.aur_domain);
 
     if config.srcinfo {
-        let files: Vec<PathBuf> = config.args.iter().map(|s| PathBuf::from(s)).collect();
+        let files: Vec<PathBuf> = config.args.iter().map(PathBuf::from).collect();
         config.args = load_targets_from_files(files)?;
     } else if config.args.contains(&String::from("-")) {
         // Remove '-' from the list, read targets from stdin
-        config.args = config.args.iter().filter(|s| *s != "-").map(|s| (*s).clone()).collect::<Vec<String>>();
+        config.args = config
+            .args
+            .iter()
+            .filter(|s| *s != "-")
+            .map(|s| (*s).clone())
+            .collect::<Vec<String>>();
         let stdin = std::io::stdin();
         let mut targets = read_targets_space_separated(stdin.lock())?;
         config.args.append(&mut targets);
@@ -96,94 +101,80 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
                 .long("download")
                 .multiple(true)
                 .help("download target(s) -- pass twice to download AUR dependencies"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("info")
                 .short("i")
                 .long("info")
                 .help("show info for target(s)"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("msearch")
                 .short("m")
                 .long("msearch")
                 .help("show packages maintained by target(s)"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("search")
                 .short("s")
                 .long("search")
                 .help("search for target(s)"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("update")
                 .short("u")
                 .long("update")
                 .help("check for updates against AUR -- can be combined with the -d flag"),
-        )
-        .group(
+        ).group(
             ArgGroup::with_name("Operations")
                 .args(&["download", "info", "msearch", "search", "update"])
                 .required(true)
                 .multiple(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("by")
                 .long("by")
                 .help("search by category")
                 .takes_value(true)
                 .value_name("search-by")
                 .possible_values(&["name", "name-desc", "maintainer"]),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("domain")
                 .long("domain")
                 .help("point cower at a different AUR (default: aur.archlinux.org)")
                 .takes_value(true)
                 .value_name("fqdn"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("force")
                 .long("force")
                 .short("f")
                 .help("overwrite existing files when downloading"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("ignore")
                 .long("ignore")
                 .help("ignore a package upgrade (can be used more than once")
                 .takes_value(true)
                 .value_name("pkg")
                 .multiple(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("ignorerepo")
                 .long("ignorerepo")
                 .takes_value(true)
                 .value_name("repo")
                 .multiple(true)
                 .help("ignore some or all binary repos"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("target")
                 .short("t")
                 .long("target")
                 .takes_value(true)
                 .help("specify an alternate download directory"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("threads")
                 .long("threads")
                 .takes_value(true)
                 .help("limit number of threads created"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("timeout")
                 .long("timeout")
                 .takes_value(true)
                 .help("specify connection timeout in seconds"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("color")
                 .long("color")
                 .short("c")
@@ -191,26 +182,22 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
                 .value_name("WHEN")
                 .help("use colored output")
                 .possible_values(&["never", "always", "auto"]),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("debug")
                 .long("debug")
                 .help("show debug output"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("format")
                 .long("format")
                 .takes_value(true)
                 .value_name("string")
                 .help("print package output according to format string"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("ignore-ood")
                 .long("ignore-ood")
                 .short("o")
                 .help("the opposite of --ignore-ood"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("sort")
                 .long("sort")
                 .takes_value(true)
@@ -226,45 +213,38 @@ fn handle_command_line_args(config: &mut Config<AurPkg>) -> Result<(), Error> {
                     "lastmodified",
                     "firstsubmitted",
                 ]),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("rsort")
                 .long("rsort")
                 .takes_value(true)
                 .value_name("key")
                 .help("sort results in descending order by key"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("listdelim")
                 .long("listdelim")
                 .takes_value(true)
                 .value_name("delim")
                 .help("change list format delimeter"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("literal")
                 .long("literal")
                 .help("disable regex search, interpret target as a literal string"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("quiet")
                 .long("quiet")
                 .short("q")
                 .help("output less"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("verbose")
                 .long("verbose")
                 .short("v")
                 .help("output more"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("from-srcinfo")
                 .long("from-srcinfo")
                 .short("p")
                 .help("use .SRCINFO files to determine targets"),
-        )
-        .arg(Arg::with_name("args").multiple(true))
+        ).arg(Arg::with_name("args").multiple(true))
         .get_matches();
 
     // Operations
@@ -482,8 +462,12 @@ where
     // Strip version information leftover from the string splitting
     let deps = deps
         .iter()
-        .map(|s| (s.split_at(s.find(|c: char| c == '<' || c == '>').unwrap_or(s.len()))).0)
-        .map(|s| s.to_owned())
+        .map(|s| {
+            (s.split_at(
+                s.find(|c: char| c == '<' || c == '>')
+                    .unwrap_or_else(|| s.len()),
+            )).0
+        }).map(|s| s.to_owned())
         .collect::<Vec<String>>();
 
     Ok(deps)
@@ -500,7 +484,10 @@ where
 
     // Get each line and split it into its parts
     while r.read_line(&mut line)? != 0 {
-        let mut input = line.split_whitespace().map(|s| (*s).to_owned()).collect::<Vec<String>>();
+        let mut input = line
+            .split_whitespace()
+            .map(|s| (*s).to_owned())
+            .collect::<Vec<String>>();
         deps.append(&mut input);
         line.clear();
     }
@@ -520,41 +507,41 @@ mod tests {
 # Generated by mksrcinfo v8
 # Wed Mar 28 18:45:02 UTC 2018
 pkgbase = aurutils
-	pkgdesc = helper tools for the arch user repository
-	pkgver = 1.5.3
-	pkgrel = 10
-	url = https://github.com/AladW/aurutils
-	arch = any
-	license = custom:ISC
-	makedepends = git
-	depends = pacman>=5
-	depends = git
-	depends = jq
-	depends = pacutils>=0.4
-	optdepends = devtools: systemd-nspawn support
-	optdepends = vifm: build file interaction
-	optdepends = aria2: threaded downloads
-	optdepends = parallel: threaded downloads
-	optdepends = expac: aursift script
-	optdepends = repose: repo-add alternative
-	source = aurutils-1.5.3.tar.gz::https://github.com/AladW/aurutils/archive/1.5.3.tar.gz
-	source = aurutils-1.5.3.tar.gz.asc::https://github.com/AladW/aurutils/releases/download/1.5.3/1.5.3.tar.gz.asc
-	source = 0001-aurbuild-backport-fix-for-236.patch
-	source = 0002-aursync-make-L-optional-281.patch
-	source = 0003-aurbuild-update-default-options.patch
-	source = 0004-aurfetch-specify-git-work-tree-git-dir-274.patch
-	source = 0005-specify-absolute-paths-for-GIT_DIR-GIT_WORK_TREE.patch
-	source = 0006-aurfetch-aursearch-use-aria2-no-conf.patch
-	source = 0007-aurchain-do-not-sort-results-when-appending.patch
-	sha256sums = a09088a460e352179dbf799d915e866af47aa280474a9c943f8e6885490734c5
-	sha256sums = SKIP
-	sha256sums = 8bf1fe675284a8e91aa37bdbf035c0158f910446fdd10d21a705e89ff711c883
-	sha256sums = 75326f1f932b545754eb05ef62ad637874367d276ee584ff9544f0c0178e39b8
-	sha256sums = bb03ef84bd3e7b28af9d2a829a61869c4845bdce65c897d267e691091033fe8a
-	sha256sums = 40efaedd46cb98e0af0faf8cd61dc36eaa2638cf429d280beaf5c37f09a4369b
-	sha256sums = 2fc7599245c53cad4b3b404a9ecf0ef122cf6be66d18a156e83ebfd1923b5359
-	sha256sums = 8f4c9ea372827db3a4d4aa8e67e4fd962384197fc1684ba50e4f739d2917402f
-	sha256sums = 1cb14e6605e38a1bc127d7ea576a02dfbc2d3c0e009597980fe4040a65b347f2
+        pkgdesc = helper tools for the arch user repository
+        pkgver = 1.5.3
+        pkgrel = 10
+        url = https://github.com/AladW/aurutils
+        arch = any
+        license = custom:ISC
+        makedepends = git
+        depends = pacman>=5
+        depends = git
+        depends = jq
+        depends = pacutils>=0.4
+        optdepends = devtools: systemd-nspawn support
+        optdepends = vifm: build file interaction
+        optdepends = aria2: threaded downloads
+        optdepends = parallel: threaded downloads
+        optdepends = expac: aursift script
+        optdepends = repose: repo-add alternative
+        source = aurutils-1.5.3.tar.gz::https://github.com/AladW/aurutils/archive/1.5.3.tar.gz
+        source = aurutils-1.5.3.tar.gz.asc::https://github.com/AladW/aurutils/releases/download/1.5.3/1.5.3.tar.gz.asc
+        source = 0001-aurbuild-backport-fix-for-236.patch
+        source = 0002-aursync-make-L-optional-281.patch
+        source = 0003-aurbuild-update-default-options.patch
+        source = 0004-aurfetch-specify-git-work-tree-git-dir-274.patch
+        source = 0005-specify-absolute-paths-for-GIT_DIR-GIT_WORK_TREE.patch
+        source = 0006-aurfetch-aursearch-use-aria2-no-conf.patch
+        source = 0007-aurchain-do-not-sort-results-when-appending.patch
+        sha256sums = a09088a460e352179dbf799d915e866af47aa280474a9c943f8e6885490734c5
+        sha256sums = SKIP
+        sha256sums = 8bf1fe675284a8e91aa37bdbf035c0158f910446fdd10d21a705e89ff711c883
+        sha256sums = 75326f1f932b545754eb05ef62ad637874367d276ee584ff9544f0c0178e39b8
+        sha256sums = bb03ef84bd3e7b28af9d2a829a61869c4845bdce65c897d267e691091033fe8a
+        sha256sums = 40efaedd46cb98e0af0faf8cd61dc36eaa2638cf429d280beaf5c37f09a4369b
+        sha256sums = 2fc7599245c53cad4b3b404a9ecf0ef122cf6be66d18a156e83ebfd1923b5359
+        sha256sums = 8f4c9ea372827db3a4d4aa8e67e4fd962384197fc1684ba50e4f739d2917402f
+        sha256sums = 1cb14e6605e38a1bc127d7ea576a02dfbc2d3c0e009597980fe4040a65b347f2
 
 pkgname = aurutils
 "##.as_bytes();
